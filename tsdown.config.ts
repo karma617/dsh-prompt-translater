@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 
-const id = '@local/dsh-prompt-translater';
+const id = 'dsh-prompt-translater';
 const external = [
   'react',
   'react/jsx-runtime',

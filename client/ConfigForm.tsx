@@ -14,7 +14,11 @@ interface ConfigData {
 
 const SETTINGS_ENDPOINT = '/plugins/dsh-prompt-translater/settings';
 
-export function TranslatorConfigCard() {
+export function TranslatorConfigCard(props: { view?: string }) {
+  if (props?.view === 'summary') {
+    return '使用配置的模型与 API 接口将新提交的对话指令翻译为英文。';
+  }
+
   const [config, setConfig] = useState<ConfigData>({
     enabled: false,
     apiUrl: '',

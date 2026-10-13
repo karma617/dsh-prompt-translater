@@ -1,21 +1,29 @@
 import React from 'react';
 import { TranslatorConfigCard } from './ConfigForm.tsx';
 
-const NS = 'plugins.bundle.config';
-const BUNDLE_KEY = '@local/dsh-prompt-translater';
+const NS = 'settings.promptTranslater';
+const BUNDLE_NAME = 'dsh-prompt-translater';
+const ROW_ID = 'prompt-translater';
 
 interface ClientContext {
+  effect?(callback: () => unknown, label?: string): unknown;
+  locale?: {
+    register?(namespace: string, locales: Record<string, Record<string, string>>): unknown;
+    bind?(namespace: string): (key: string) => string;
+  };
   slots: {
     inject(name: string, factory: () => unknown): unknown;
     register(options: {
       name: string;
-      key: string;
+      id?: string;
+      key?: string;
       order?: number;
+      label?: () => string;
     }, component: React.ComponentType<any>): unknown;
   };
 }
 
-export const inject = ['slots'];
+export const inject = ['slots', 'locale'];
 
 export function apply(ctx: ClientContext) {
   // Inject style tag into document if not present
@@ -131,11 +139,52 @@ export function apply(ctx: ClientContext) {
     }
   }
 
-  // Register into plugins.bundle.config with entryKey = BUNDLE_KEY
+  // 1. settings.section: 注册到设置侧边栏菜单（如“通用”、“模型”、“Agent编排”等下方）
+  ctx.slots.inject('settings.section', () => {
+    return ctx.slots.register({
+      name: 'settings.section',
+      id: 'prompt-translater',
+      order: 25,
+      label: () => '指令翻译',
+    }, TranslatorConfigCard);
+  });
+
+  // 2. plugins.item: 在插件页以卡片形式展示，点击可打开独立页面
+  ctx.slots.inject('plugins.item', () => {
+    return ctx.slots.register({
+      name: 'plugins.item',
+      id: 'prompt-translater',
+      order: 15,
+      label: () => '英文指令翻译',
+    }, TranslatorConfigCard);
+  });
+
+  // 3. plugins.row.config: 为包含的组件行注册配置
+  const rowKey1 = `${BUNDLE_NAME}#${ROW_ID}`;
+  const rowKey2 = `@local/dsh-prompt-translater#${ROW_ID}`;
+  ctx.slots.inject('plugins.row.config', () => {
+    ctx.slots.register({
+      name: 'plugins.row.config',
+      key: rowKey1,
+      order: 10,
+    }, TranslatorConfigCard);
+    return ctx.slots.register({
+      name: 'plugins.row.config',
+      key: rowKey2,
+      order: 10,
+    }, TranslatorConfigCard);
+  });
+
+  // 4. plugins.bundle.config: 在插件详情页展示配置
   ctx.slots.inject('plugins.bundle.config', () => {
+    ctx.slots.register({
+      name: 'plugins.bundle.config',
+      key: BUNDLE_NAME,
+      order: 10,
+    }, TranslatorConfigCard);
     return ctx.slots.register({
       name: 'plugins.bundle.config',
-      key: BUNDLE_KEY,
+      key: '@local/dsh-prompt-translater',
       order: 10,
     }, TranslatorConfigCard);
   });

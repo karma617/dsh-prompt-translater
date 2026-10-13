@@ -1,6 +1,6 @@
 - insert:
     - id: prompt-translater
-      name: '@local/dsh-prompt-translater'
+      name: 'dsh-prompt-translater'
       config:
         enabled: false
         apiUrl: ''
