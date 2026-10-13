@@ -1,0 +1,9 @@
+{
+  "meta": {
+    "title": "English Prompt Translator",
+    "description": "Translates new chat submissions once using a configured model; leaves automated context and history untouched."
+  },
+  "systemPrompt": {
+    "description": "System prompt for the translation model. Can be customized by the user; falls back to the built-in default prompt when empty."
+  }
+}

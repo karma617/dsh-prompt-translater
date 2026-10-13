@@ -1,0 +1,32 @@
+import { defineConfig } from 'tsdown';
+
+const id = '@local/dsh-prompt-translater';
+const external = [
+  'react',
+  'react/jsx-runtime',
+  'react-dom',
+  '@deepseek-ai/cordis',
+  '@deepseek-ai/dsh-client-ui-slots',
+  '@deepseek-ai/dsh-client-ui-primitives',
+];
+
+export default defineConfig({
+  name: id + '/client',
+  entry: { client: 'client/index.ts' },
+  outDir: 'lib',
+  format: 'cjs',
+  platform: 'browser',
+  target: 'es2022',
+  dts: false,
+  sourcemap: true,
+  clean: false,
+  external,
+  noExternal: source => external.includes(source) ? undefined : true,
+  define: { 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'production') },
+  outputOptions: {
+    entryFileNames: 'client.js',
+    banner: 'window.__ModuleLoader__.load({ id: ' + JSON.stringify(id) + ', factory: (require) => {',
+    footer: 'return module.exports; } });',
+    intro: 'var module = { exports: {} }; var exports = module.exports;',
+  },
+});

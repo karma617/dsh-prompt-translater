@@ -1,0 +1,14 @@
+- insert:
+    - id: prompt-translater
+      name: '@local/dsh-prompt-translater'
+      config:
+        enabled: false
+        apiUrl: ''
+        apiKey: ''
+        modelId: ''
+        provider: ''
+        model: ''
+        timeoutMs: 60000
+        maxOutputTokens: 8192
+        temperature: 0.3
+        systemPrompt: ''
