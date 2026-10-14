@@ -8,16 +8,16 @@ export const TRANSLATOR_SETTINGS_NAMESPACE = 'prompt-translater';
 export const TRANSLATOR_SETTINGS_ENDPOINT = '/plugins/dsh-prompt-translater/settings';
 
 export const Config = z.object({
-  enabled: z.boolean().default(false),
-  apiUrl: z.string().default(''),
-  apiKey: z.string().default(''),
-  modelId: z.string().default(''),
-  provider: z.string().default(''),
-  model: z.string().default(''),
-  timeoutMs: z.number().step(1).min(1).max(300000).default(60000),
-  maxOutputTokens: z.number().step(1).min(1).max(65536).default(8192),
-  temperature: z.number().min(0).max(2).step(0.1).default(0.3),
-  systemPrompt: z.string().role('textarea').default(DEFAULT_SYSTEM_PROMPT),
+  enabled: z.boolean().default(false).volatile(),
+  apiUrl: z.string().default('').volatile(),
+  apiKey: z.string().default('').volatile(),
+  modelId: z.string().default('').volatile(),
+  provider: z.string().default('').volatile(),
+  model: z.string().default('').volatile(),
+  timeoutMs: z.number().step(1).min(1).max(300000).default(60000).volatile(),
+  maxOutputTokens: z.number().step(1).min(1).max(65536).default(8192).volatile(),
+  temperature: z.number().min(0).max(2).step(0.1).default(0.3).volatile(),
+  systemPrompt: z.string().role('textarea').default(DEFAULT_SYSTEM_PROMPT).volatile(),
 });
 
 function sendJson(res, status, value) {
@@ -43,13 +43,39 @@ function sameOrigin(req) {
   return origin === undefined || origin === 'http://' + req.headers.host || origin === 'https://' + req.headers.host;
 }
 
+function unwrap(val, fallback) {
+  if (val !== null && typeof val === 'object' && typeof val.get === 'function') {
+    return val.get();
+  }
+  return val !== undefined ? val : fallback;
+}
+
+function resolveRawConfig(config) {
+  return {
+    enabled: Boolean(unwrap(config.enabled, false)),
+    apiUrl: String(unwrap(config.apiUrl, '')),
+    apiKey: String(unwrap(config.apiKey, '')),
+    modelId: String(unwrap(config.modelId, '')),
+    provider: String(unwrap(config.provider, '')),
+    model: String(unwrap(config.model, '')),
+    timeoutMs: Number(unwrap(config.timeoutMs, 60000)),
+    maxOutputTokens: Number(unwrap(config.maxOutputTokens, 8192)),
+    temperature: Number(unwrap(config.temperature, 0.3)),
+    systemPrompt: String(unwrap(config.systemPrompt, DEFAULT_SYSTEM_PROMPT)),
+  };
+}
+
 export function apply(ctx, config) {
-  // If settings service exists, support dynamic runtime settings
-  let currentConfig = { ...config };
+  let currentConfig = resolveRawConfig(config);
 
   if (ctx.settings) {
     ctx.effect(() => ctx.settings.configure({ auto: false }, ctx.fiber));
   }
+
+  // Listen for loader/volatile-update if available
+  ctx.on?.('loader/volatile-update', () => {
+    currentConfig = resolveRawConfig(config);
+  });
 
   // Register settings HTTP API if webServer is present
   if (ctx.webServer) {
@@ -83,7 +109,11 @@ export function apply(ctx, config) {
             systemPrompt: typeof incoming.systemPrompt === 'string' ? incoming.systemPrompt : currentConfig.systemPrompt,
           };
           if (ctx.settings) {
-            await ctx.settings.replace(TRANSLATOR_SETTINGS_NAMESPACE, currentConfig);
+            try {
+              await ctx.settings.replace(TRANSLATOR_SETTINGS_NAMESPACE, currentConfig);
+            } catch (err) {
+              console.warn('Failed to persist settings via ctx.settings.replace, keeping memory state:', err.message);
+            }
           }
           return sendJson(res, 200, { config: currentConfig });
         } catch (error) {

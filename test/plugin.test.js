@@ -44,10 +44,11 @@ test('Standard Schema validates defaults and invalid bounds', async () => {
   assert.equal(typeof standard.validate, 'function');
   const defaults = await standard.validate({});
   assert.equal(defaults.issues, undefined);
-  assert.equal(defaults.value.enabled, false);
-  assert.equal(defaults.value.timeoutMs, 60000);
-  assert.equal(typeof defaults.value.systemPrompt, 'string');
-  assert.ok(defaults.value.systemPrompt.includes('Expert AI Instruction Translator'));
+  const val = v => v && typeof v.get === 'function' ? v.get() : v;
+  assert.equal(val(defaults.value.enabled), false);
+  assert.equal(val(defaults.value.timeoutMs), 60000);
+  assert.equal(typeof val(defaults.value.systemPrompt), 'string');
+  assert.ok(val(defaults.value.systemPrompt).includes('Expert AI Instruction Translator'));
   for (const bad of [{ timeoutMs: 0 }, { maxOutputTokens: 1.5 }, { enabled: 'yes' }, { systemPrompt: 123 }]) {
     assert.ok((await standard.validate(bad)).issues.length > 0);
   }

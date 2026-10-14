@@ -1,6 +1,6 @@
 {
   "name": "dsh-prompt-translater",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "description": "Translate newly submitted human prompts to ASCII English once, before conversation admission.",
